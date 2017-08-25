@@ -11,24 +11,32 @@ local parser = CmdLineParser:new( "helloworld", "Hello World example for the Lua
 parser:addOption( "username", "World", "Set user name" )
 parser:addOption( "saybyebye", false, "Ask the app to say goodbye" )
 
+-- Hidden options
+parser:addOption( "birthday", false, "whish happy birthday", true )
+
 -- Parse the command line
 local result = parser:parse( arg, false )
-if ( not result ) or parser.help.value then
+if ( not result ) or parser.help then
 	if not result then
 		print( "ERROR: Failed to parse the command line" )
 	end
 	
-	-- display the help section
-	print( parser:helpToString() )
+	-- display the help section (use 'true' to show hidden options)
+	print( parser:helpToString( false ) )
 	-- ##### RETURN #####
 	return
 end
 
 -- Say hello
-print( "Hello " .. parser.username.value .." !" )
+print( "Hello " .. parser.username .." !" )
+
+-- Happy birthday
+if parser.birthday then
+	print( "Today is your birthday. Happy Birthday !" )
+end
 
 -- Say bye bye
-if parser.saybyebye.value then
-	print( "Bye bye " .. parser.username.value .." !" )
+if parser.saybyebye then
+	print( "Bye bye " .. parser.username .." !" )
 end
 
