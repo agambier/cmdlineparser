@@ -55,6 +55,9 @@ function CmdLineParser:new( appName, appDescription )
 	newObj.appName = appName;
 	newObj.appDescription = appDescription;
 	
+	-- Table used to store infos about added options
+	newObj._infos = {}
+	
 	-- add default help option
 	newObj:addOption( "help", false, "Display this help." )
 	
@@ -86,50 +89,52 @@ function CmdLineParser:addOption( name, defaultValue, help, isHidden )
 	end
 
 	-- add 
-	self[ name ] = {}
-	self[ name ].value = defaultValue
+	self[ name ] = defaultValue
 
-	-- associated settings
-	self[ name ].defaultValue = defaultValue
-	self[ name ].help = help
-	self[ name ].isHidden = isHidden or false
-	self[ name ].type = optionType
+	-- add associated infos
+	self._infos[ name ] = {}
+	self._infos[ name ].defaultValue = defaultValue
+	self._infos[ name ].help = help
+	self._infos[ name ].isHidden = isHidden or false
+	self._infos[ name ].type = optionType
 end
 
 --
 --
 --
 function CmdLineParser:parse( cmdLine, failOnError )
-	local currentOption = nil
+	local infos
+	local optionName
 	failOnError = failOnError or false
 
 	if "table" == type( cmdLine ) then
 		for i=1,#arg do
 			if "--" == arg[ i ]:sub( 1, 2 ) then
 				-- get CmdLineParserion name
-				currentOption = self[ arg[ i ]:sub( 3 ) ]
+				optionName = arg[ i ]:sub( 3 )
+				infos = self._infos[ optionName ]
 
-				if not currentOption then
+				if not infos then
 					-- handle this kind of error ?
 					if failOnError then
 						-- ##### RETURN #####
 						return false
 					end
-				elseif CmdLineParser.Types.Boolean == currentOption.type then
+				elseif CmdLineParser.Types.Boolean == infos.type then
 					-- it's a boolean so it does not need a value
-					currentOption.value = true
-					currentOption = nil
+					self[ optionName ] = true
+					infos = nil
 				end
 
-			elseif currentOption then
+			elseif infos then
 				-- Get a value
-				if CmdLineParser.Types.Number == currentOption.type then
-					currentOption.value = tonumber( arg[ i ] )
-				elseif CmdLineParser.Types.String == currentOption.type then
-					currentOption.value = arg[ i ]
+				if CmdLineParser.Types.Number == infos.type then
+					self[ optionName ] = tonumber( arg[ i ] )
+				elseif CmdLineParser.Types.String == infos.type then
+					self[ optionName ] = arg[ i ]
 				end
 
-				currentOption = nil
+				infos = nil
 			end
 		end
 	end
@@ -153,23 +158,23 @@ function CmdLineParser:helpToString( showHiddens )
 	
 	--	List of options
 	result = result .. "\nOPTIONS"
-	for key, value in pairs( self ) do
-		--	for now, tables are options added to the parser
-		if "table" == type( value ) then
-			local option = self[ key ]
-			
-			if showHiddens or ( not option.isHidden ) then
-				result = result .. "\n  --" .. key 
-				if CmdLineParser.Types.Boolean ~= option.type then
-				result = result .. " VALUE"
+	for name in pairs( self ) do
+		local infos = self._infos[ name ]
+		
+		-- options DO have associated infos
+		if infos then
+			if showHiddens or ( not infos.isHidden ) then
+				result = result .. "\n  --" .. name 
+				if CmdLineParser.Types.Boolean ~= infos.type then
+					result = result .. " VALUE"
 				end
 				result = result .. "\n"
 						
-				if option.help then
-					result = result .. "      " .. option.help .. "\n"
+				if infos.help then
+					result = result .. "      " .. infos.help .. "\n"
 				end
 				
-				result = result .. "      Default value : " .. tostring( option.defaultValue ) .. "\n"
+				result = result .. "      Default value : " .. tostring( infos.defaultValue ) .. "\n"
 				
 			end
 		end
@@ -184,13 +189,9 @@ end
 function CmdLineParser:toString()
 	local result = ""
 	
-	for key, value in pairs( self ) do
-		local valueType = type( value )
-		if "string" == valueType then
-			result = result .. key .. " = " .. value .. "\n"
-		elseif "table" == valueType then
-			--	for now, tables are options added to the parser
-			result = result .. key .. " = " .. tostring( self[ key ].value ) .. "\n"
+	for name, value in pairs( self ) do
+		if "table" ~= type( value ) then
+			result = result .. name .. " = " .. tostring( value ) .. "\n"
 		end
 	end
 	
