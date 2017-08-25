@@ -1,6 +1,6 @@
 -- Declare a namespace
 CmdLineParser = {
-	_VERSION = "-.--"
+	_VERSION = "-.--",
 	
 	-- option types
 	Types = { Boolean = 0, Number = 1, String = 3 }
