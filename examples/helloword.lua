@@ -4,6 +4,22 @@ package.path = package.path .. ";E:\\AGProjects\\cmdlineparser.git\\?.lua"
 -- load CmdLineParser module
 require "cmdlineparser"
 
+function test( str )
+	print( tostring( str:match( '=' ) )  )
+	if str:match( '=' ) then
+		local name, value = str:match( '^%-%-([^%-]*)="?([^"]*)"?' )
+		print( "Value : " .. name .. " = " .. value )
+	else
+		print( "Boolean : " .. str:match( '^%-%-([^%-]*)' ) )
+	end
+end
+
+test( '--username' )
+test( '--username=alex' )
+test( '--username="alexandre gambier"' )
+test( '--username="ale= gambier=5"' )
+
+
 -- Create a command line parser
 local parser = CmdLineParser:new( "helloworld", "Hello World example for the Lua CmdLineParser" )
 
